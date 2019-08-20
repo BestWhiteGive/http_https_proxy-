@@ -105,16 +105,22 @@ static void FdHandler( void *lpCtx )
 				}
 				sscanf( Buffer + i + 1, "%hu",&port );
 				printf( "HTTPS %s -> %hu\r\n", Buffer + 8, port );
-				sockfd = socket( AF_INET, SOCK_STREAM, 0 );
 				struct sockaddr_in	address;
 				struct hostent		*server;
 				address.sin_family	= AF_INET;
 				address.sin_port	= htons( port );
 				server			= gethostbyname( Buffer + 8 );
+				if(server == NULL)
+				{
+					printf( "gethostbyname HTTP %s -> %d Failed\r\n", Buffer + 8, port );
+					break;	
+				}
+				sockfd = socket( AF_INET, SOCK_STREAM, 0 );
 				memcpy( (char *) &address.sin_addr.s_addr, (char *) server->h_addr, server->h_length );
 				printf( "To [%s:%hu]\r\n", inet_ntoa( address.sin_addr ), ntohs( address.sin_port ) );
 				if ( -1 == connect( sockfd, (struct sockaddr *) &address, sizeof(address) ) )
 				{
+					printf(Buffer);
 					printf( "connect HTTPS %s -> %hu Failed\r\n", Buffer + 8, port );
 					break;
 				}
@@ -130,17 +136,25 @@ static void FdHandler( void *lpCtx )
                 char	Host[128];
                 u_short port;
 				port = getHost( Buffer, recvlen, Host );
+
 				if ( port == 0 )
 				{
 					break;
 				}
 				printf( "HTTP %s -> %d\r\n", Host, port );
-				sockfd = socket( AF_INET, SOCK_STREAM, 0 );
+				
 				struct sockaddr_in	address;
 				struct hostent		*server;
 				address.sin_family	= AF_INET;
 				address.sin_port	= htons( port );
 				server			= gethostbyname( Host );
+				if(server == NULL)
+				{
+					printf(Buffer);
+					printf( "gethostbyname HTTP %s -> %d Failed\r\n", Host, port );
+					break;	
+				}
+				sockfd = socket( AF_INET, SOCK_STREAM, 0 );
 				memcpy( (char *) &address.sin_addr.s_addr, (char *) server->h_addr, server->h_length );
 				printf( "To [%s:%hu]\r\n", inet_ntoa( address.sin_addr ), ntohs( address.sin_port ) );
 				if ( -1 == connect( sockfd, (struct sockaddr *) &address, sizeof(address) ) )
@@ -209,5 +223,3 @@ int main()
 	WSACleanup();
 	return(0);
 }
-
-
